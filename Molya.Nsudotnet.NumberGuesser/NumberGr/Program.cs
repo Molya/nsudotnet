@@ -1,123 +1,113 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Molya.Nsudotnet.NumberGuesser
+ 
+namespace NumberGuesser
 {
-    internal class Program
+    class Program
     {
-        private static void Main(string[] args)
+        public static void Main(string[] args)
         {
-            bool flag = true;
-            String answer;
-            bool amiss = false;
-            const string timeSpanFormat = @"hh\:mm\:ss";
-           const string quitGame = "q";
-            List<String> result = new List<string>();
-           
-        while(flag){
-
-            
-                 String[] feedback =
+            const int numberOfBadАttempts = 4;
+            var flag = true;
+            const string timeSpanFormat = @"\mm";
+            const string quitGame = "q";
+            var result = new List<string>();
+            string userName;
+            int number, enteredNumber;
+            var random = new Random();
+            var attempts = new List<string>();
+ 
+            string[] feedback ={ "давай again!! ",
+                                   "Думай Думай, driveller, ",
+                                   "Ээх.. ты тупой! P.S.Без обид!! ",
+                                   "Даа.. Ты поражаешь меня(((!! "};
+ 
+            while (flag)
             {
-     "давай again!! ",
-     "Думай Думай, driveller, ",
-     "Ээх.. ты тупой! P.S.Без обид!! ",
-     "Даа.. Ты поражаешь меня(((!! "
-            };
-
-            Console.WriteLine("Салют! Как зовут тебя напарник? :");
-            String _user = Console.ReadLine();
-
-            Console.WriteLine("Рад знакомству, " + _user+"!");
-            Random _randNumber = new Random();
-
-            int _number = _randNumber.Next(0, 100);
-            Console.WriteLine("Давай взбодрим твои мозги!\n\nЯ загадал число от 0 до 100! Попробуй отгадать:");
-
-
-            while (!amiss)
-            {
-
-                for (var i = 0; i < 4; i++)
+                Console.WriteLine("Салют! Как зовут тебя напарник? :");
+                userName = Console.ReadLine();
+ 
+                Console.WriteLine("Рад знакомству, " + userName + "!");
+                number = random.Next(0, 100);
+                Console.WriteLine("Давай взбодрим твои мозги!\n\nЯ загадал число от 0 до 100! Попробуй отгадать число:");
+ 
+                while (true)
                 {
-
-                    DateTime startTime = DateTime.Now;
-                    String line = Console.ReadLine();
-
-                       if (line == quitGame)
-                       {
-                            Console.WriteLine("Okey, Пока " + _user + "!");
+                    var startTime = DateTime.Now;
+                    var line = Console.ReadLine();
+ 
+                    switch (line)
+                    {
+                        case quitGame:
+                            Console.WriteLine("Okey, Пока " + userName + "!");
                             Console.ReadLine();
                             Environment.Exit(0);
-                        }
-
-                  
-
-
-                    else if (line == null)
-                    {
-                        continue;
+                            break;
+                        case null:
+                            continue;
                     }
-
-                    int _enterNumber = 0;
-
+ 
                     try
                     {
-                        _enterNumber = int.Parse(line);
+                        enteredNumber = int.Parse(line);
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine("Ты че?! Нужна цифра!");
+                        Console.WriteLine("некорректный ввод!");
                         continue;
                     }
-
-                     
-                    switch (_enterNumber < _number)
+ 
+                    if (enteredNumber == number)
                     {
-                        case true:
-                            Console.WriteLine("Это число меньше, чем задуманное");
-
-                            break;
-                        case false:
-                            Console.WriteLine("Это число больше, чем задуманное");
-                            result.Add(_enterNumber + " больше");
-                            break;
+                        Console.WriteLine();
+                        result.Add(enteredNumber + " угадал");
+                        var endTime = DateTime.Now;
+                        var steps = attempts.Count;
+ 
+                        Console.WriteLine("Ты сделал это за {0}", (endTime - startTime).ToString(timeSpanFormat) + " минут");
+                        Console.WriteLine("Вот твоя история попыток:");
+                        for (var j = 0; j < steps; j++)
+                        {
+                            Console.WriteLine(attempts.First());
+                            attempts.RemoveAt(0);
+                        }
+                        break;
                     }
-
-                    if (_enterNumber == _number)
-                      
-                    {    amiss = true;
-                            result.Add(_enterNumber + " угадал");
-                            DateTime endTime = DateTime.Now;
-                            int steps = result.Count;
-
-                            Console.WriteLine("Ты сделал это за {0}", (endTime - startTime).ToString(timeSpanFormat));
-                            for (var j = 0; j < steps; j++)
-                            {
-                                Console.WriteLine(result.First());
-                                result.RemoveAt(0);
-                            }
-                            break;
-
+ 
+                    if (enteredNumber < number)
+                    {
+                        Console.WriteLine("Это число меньше, чем задуманное");
+                        attempts.Add(enteredNumber + "меньше задуманного");
+ 
                     }
+                    else
+                    {
+                        Console.WriteLine("Это число больше, чем задуманное");
+                        attempts.Add(enteredNumber + "больше задуманного");
+                    }
+                    if (0 == attempts.Count % numberOfBadАttempts)
+                    {
+                        Console.WriteLine(feedback[random.Next(0, 4)] + userName);
+                    }
+ 
+ 
                 }
-
-                if (!amiss)
+ 
+                Console.WriteLine("еще раз? y/n");
+ 
+ 
+                do
                 {
-                    Console.WriteLine(feedback[_randNumber.Next(0, 4)] + _user);
-                }
-            }
-
-               Console.WriteLine("еще раз? y/n");
-            
-               while(true){
-                    answer = Console.ReadLine();
-                    if (answer.Equals("y")){
-                        flag = true;
+                    var answer = Console.ReadLine();
+ 
+                    if (string.IsNullOrEmpty(answer))
+                    {
+                        continue;
+                    }
+ 
+                    if (answer.Equals("y"))
+                    {
                         break;
                     }
                     if (answer.Equals("n"))
@@ -125,8 +115,9 @@ namespace Molya.Nsudotnet.NumberGuesser
                         flag = false;
                         break;
                     }
+ 
                 }
-            Console.ReadLine();
+                while (true);
             }
         }
     }
