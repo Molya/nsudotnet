@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
@@ -15,7 +16,7 @@ namespace RssReader
         private static DateTime lastPoll = DateTime.Now;
         private static InputContainer container = new InputContainer();
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             bool isParsed;
             int portNumber;
@@ -26,6 +27,7 @@ namespace RssReader
             container.SmtpServer = Console.ReadLine();
             do
             {
+                 http://habrahabr.ru/post/237899/
                 Console.WriteLine("Введите номер порта в числовом формате");
                 isParsed = int.TryParse(Console.ReadLine(), out portNumber);
 
@@ -40,40 +42,59 @@ namespace RssReader
 
             var reader = new LiveJournalReader(blogName);
 
-            while (true)
+
+            Console.WriteLine("Загрузка данных из LiveJournal...");
+            var posts = reader.ReadPosts();
+
+            if (posts == null)
             {
-                Thread.Sleep(20000);
-
-                Console.WriteLine("Загрузка данных из LiveJournal...");
-                var posts = reader.ReadPosts();
-
-                if (posts == null)
-                {
-                    Console.WriteLine("Неудалось загрузить данные.");
-                    continue;
-                }
-
-                var chachedTime = lastPoll;
-                lastPoll = DateTime.Now;
-
-
-                bool isNewData = false;
-                foreach (var post in posts)
-                {
-                    if (post.PushDateTime > chachedTime)
-                    {
-                        if (!isNewData)
-                        {
-                            isNewData = true;
-                            Console.WriteLine("Обнаружены новые данные, отправка почты...");
-                        }
-                        SendMail(post.Title, post.Description);
-                    }
-                }
-
-                if (!isNewData)
-                    Console.WriteLine("Новых данных нет.");
+                Console.WriteLine("Неудалось загрузить данные.");
+                return;
             }
+
+            try
+            {
+                using (StreamReader sr = new StreamReader("last_poll.txt"))
+                {
+                    string dateTime = sr.ReadToEnd();
+                    lastPoll = DateTime.Parse(dateTime);
+                }
+
+                using (StreamWriter sw = new StreamWriter("last_poll.txt", false))
+                {
+                    sw.WriteLine(DateTime.Now.ToString());
+                }
+            }
+            catch (FileNotFoundException)
+            {
+                using (StreamWriter sw = new StreamWriter("last_poll.txt", false))
+                {
+                    sw.WriteLine(DateTime.Now.ToString());
+                }
+            }
+            catch (Exception)
+            {
+                return;
+            }
+
+
+            bool isNewData = false;
+            foreach (var post in posts)
+            {
+                if (post.PushDateTime > lastPoll)
+                {
+                    if (!isNewData)
+                    {
+                        isNewData = true;
+                        Console.WriteLine("Обнаружены новые данные, отправка почты...");
+                    }
+                    SendMail(post.Title, post.Description);
+                }
+            }
+
+            if (!isNewData)
+                Console.WriteLine("Новых данных нет.");
+
         }
 
         public static void SendMail(string title, string message)
